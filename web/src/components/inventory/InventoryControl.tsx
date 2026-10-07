@@ -91,25 +91,25 @@ const InventoryControl: React.FC = () => {
             onKeyDown={handleKeyDown}
             min={0}
           />
-          <button
+          {/* <button
             className="inventory-control-button"
             ref={(el) => {
               use(el);
             }}
           >
             {Locale.ui_use || 'Use'}
-          </button>
-          <button
+          </button> */}
+          {/* <button
             className="inventory-control-button"
             ref={(el) => {
               give(el);
             }}
           >
             {Locale.ui_give || 'Give'}
-          </button>
-          <button className="inventory-control-button" onClick={() => fetchNui('exit')}>
+          </button> */}
+          {/* <button className="inventory-control-button" onClick={() => fetchNui('exit')}>
             {Locale.ui_close || 'Close'}
-          </button>
+          </button> */}
         </div>
       </div>
 

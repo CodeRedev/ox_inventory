@@ -1,23 +1,20 @@
-$mainColor: #22232c;
-$textColor: #c1c2c5;
-$mainFont: Roboto;
+$mainColor: #14151a;
+$textColor: #c9cad0;
+$mainFont: 'Poppins', 'Segoe UI', Roboto, sans-serif;
 
-$secondaryColor: rgba(12, 12, 12, 0.4);
-$secondaryColorHighlight: #33343f;
-$secondaryColorLight: rgba(0, 0, 0, 0.5);
-$secondaryColorDark: rgba(12, 12, 12, 0.8);
+$secondaryColor: rgba(255, 255, 255, 0.055);
+$secondaryColorHighlight: rgba(255, 255, 255, 0.1);
+$secondaryColorDark: rgba(255, 255, 255, 0.14);
+$borderColor: rgba(255, 255, 255, 0.08);
 
-$gridCols: 5;
-$gridRows: 5;
-$gridSize: 10.2vh;
-$gridGap: 2px;
-$containerSize: calc(#{$gridRows} * #{$gridSize + 0.22vh} + #{$gridRows} * #{$gridGap});
+$gridSize: 8.2vh;
+$gridGap: 0.85vh;
+$gridWidth: calc(7 * #{$gridSize} + 6 * #{$gridGap});
+$pocketsHeight: calc(5 * #{$gridSize} + 4 * #{$gridGap});
 
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
-    'Helvetica Neue', sans-serif;
+  font-family: $mainFont;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100vh;
@@ -44,11 +41,12 @@ p {
   font-family: $mainFont;
 }
 
-input[type='number']::-webkit-inner-spin-button,
-input[type='number']::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
+button {
+  font-family: $mainFont;
+}
+
+button:active {
+  transform: translateY(2px);
 }
 
 .app-wrapper {
@@ -57,62 +55,19 @@ input[type='number']::-webkit-outer-spin-button {
   color: white;
 }
 
-.context-menu-list {
-  min-width: 200px;
-  background-color: $mainColor;
-  color: $textColor;
-  padding: 4px;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
-  border-radius: 4px;
-  outline: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.context-menu-item {
-  padding: 8px;
-  border-radius: 4px;
-  background-color: transparent;
-  outline: none;
-  border: none;
-  color: $textColor;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  &:active {
-    transform: none;
-  }
-  &:hover {
-    background-color: $secondaryColorHighlight;
-    cursor: pointer;
-  }
-}
-
-.tooltip-description {
-  padding-top: 5px;
-}
-
-.tooltip-markdown > p {
-  margin: 0;
-}
-
-button:active {
-  transform: translateY(3px);
-}
+// ---------------------------------------------------------------- drag
 
 .item-drag-preview {
   width: 7.7vh;
   height: 7.7vh;
-  z-index: 1;
+  z-index: 100;
   position: fixed;
   pointer-events: none;
   top: 0;
   left: 0;
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 7vh;
+  background-size: 6vh;
   image-rendering: -webkit-optimize-contrast;
   will-change: transform;
   backface-visibility: hidden;
@@ -127,78 +82,523 @@ body.inv-dragging {
   }
 }
 
-.inventory-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+// ---------------------------------------------------------------- layout
 
-  gap: 20px;
+.inventory-wrapper {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 4.5vh 7.8% 0;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(10, 10, 14, 0.7), rgba(4, 4, 6, 0.92)),
+    rgba(6, 6, 9, 0.6);
+  // backdrop-filter: blur(3px);
+  color: #fff;
+  font-family: $mainFont;
 }
 
+.inventory-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 2.4vh;
+  border-bottom: 1px solid $borderColor;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 6vh;
+    height: 2px;
+    background: #fff;
+  }
+}
+
+.inventory-title {
+  margin: 0;
+  font-size: 4.4vh;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 1.5vh;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.inventory-subtitle {
+  margin-top: 1.3vh;
+  font-size: 1.5vh;
+  letter-spacing: 1.2vh;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.inventory-close {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+
+  .inventory-close-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.25;
+
+    strong {
+      font-size: 1.9vh;
+      font-weight: 600;
+    }
+
+    small {
+      font-size: 1.5vh;
+      color: rgba(255, 255, 255, 0.65);
+    }
+  }
+
+  kbd {
+    padding: 1.5vh 1.6vh;
+    background: #e9e9ec;
+    color: #15161a;
+    font-family: $mainFont;
+    font-size: 1.7vh;
+    font-weight: 600;
+    border-radius: 0.3vh;
+  }
+
+  &:hover kbd {
+    background: #fff;
+  }
+}
+
+.inventory-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 3.2vh;
+}
+
+.inventory-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2.8vh;
+  width: calc(#{$gridWidth} + 1vh);
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6vh;
+  }
+}
+
+// ---------------------------------------------------------------- panel header
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 1.4vh;
+}
+
+.panel-icon {
+  position: relative;
+  flex: none;
+  width: 4.8vh;
+  height: 4.8vh;
+  display: grid;
+  place-items: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0.75vh;
+    transform: rotate(45deg);
+    border-radius: 0.6vh;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  svg {
+    position: relative;
+    width: 2.3vh;
+    height: 2.3vh;
+    stroke: #fff;
+  }
+}
+
+.panel-titles {
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 2.9vh;
+    font-weight: 800;
+    font-style: italic;
+    line-height: 1.1;
+    color: #fff;
+  }
+
+  p {
+    margin-top: 0.3vh;
+    font-size: 1.55vh;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.panel-meta {
+  margin-left: auto;
+  width: 15vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9vh;
+}
+
+.panel-meta-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.9vh;
+  font-style: italic;
+
+  .meta-main {
+    font-size: 2.2vh;
+    font-weight: 500;
+    color: #fff;
+  }
+
+  .meta-dim {
+    font-size: 1.7vh;
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.panel-meta-icon {
+  width: 2vh;
+  height: 2vh;
+  stroke: #fff;
+}
+
+.segment-bar {
+  display: flex;
+  gap: 0.4vh;
+
+  > div {
+    flex: 1;
+    height: 0.55vh;
+    border-radius: 0.3vh;
+    background: rgba(255, 255, 255, 0.14);
+
+    &.filled {
+      background: #fff;
+    }
+  }
+}
+
+// ---------------------------------------------------------------- grids and slots
+
+.inventory-grid-container {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 7), $gridSize);
+  grid-auto-rows: $gridSize;
+  gap: $gridGap;
+
+  &.hotkeys {
+    --cols: 5;
+  }
+
+  &.pockets {
+    max-height: $pocketsHeight;
+    overflow-y: auto;
+  }
+}
+
+.inventory-slot {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: $secondaryColor;
+  background-repeat: no-repeat;
+  background-position: center 42%;
+  background-size: 58%;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.6vh;
+  image-rendering: -webkit-optimize-contrast;
+  color: $textColor;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+
+  &:hover {
+    background-color: $secondaryColorHighlight;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &.is-selected {
+    background-color: $secondaryColorHighlight;
+    border-color: rgba(255, 255, 255, 0.55);
+  }
+}
+
+.item-slot-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+
+  p {
+    font-size: 12px;
+  }
+}
+
+.item-slot-header-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.slot-count {
+  padding: 0.6vh 0.8vh 0;
+  font-size: 1.4vh;
+  font-style: italic;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.slot-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 0.7vh 0.8vh;
+}
+
+.slot-weight {
+  font-size: 1.35vh;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.65);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.slot-durability {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  .durability-bar {
+    height: 0.35vh;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.slot-hotkey {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  min-width: 2.3vh;
+  height: 2.3vh;
+  padding: 0 0.5vh;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-top-left-radius: 0.6vh;
+  font-size: 1.4vh;
+  font-style: italic;
+  font-weight: 700;
+  color: #fff;
+}
+
+.item-slot-currency-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.3vh;
+
+  p {
+    font-size: 14px;
+    text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
+  }
+}
+
+.item-slot-price-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+
+  p {
+    font-size: 14px;
+    text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
+  }
+}
+
+// ---------------------------------------------------------------- ground / right inventory zone
+
+.ground-zone {
+  box-sizing: border-box;
+  height: 38vh;
+  padding: 0.5vh;
+  overflow-y: auto;
+  // border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6vh;
+
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+
+  &.has-grid {
+    height: calc(#{$pocketsHeight} + 1vh + 2px);
+  }
+
+  &.is-over {
+    border-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.ground-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8vh;
+  text-align: center;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.5);
+
+  svg {
+    width: 3.6vh;
+    height: 3.6vh;
+    margin-bottom: 0.6vh;
+    stroke: rgba(255, 255, 255, 0.55);
+  }
+
+  .ground-empty-title {
+    font-size: 2vh;
+  }
+
+  .ground-empty-hint {
+    font-size: 1.7vh;
+  }
+}
+
+// ---------------------------------------------------------------- middle controls (amount, use, give)
+
 .inventory-control {
+  align-self: center;
   display: flex;
 
   .inventory-control-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    justify-content: center;
     align-items: center;
+    gap: 1.2vh;
+    width: 14vh;
   }
 
   .inventory-control-input {
-    transition: 200ms;
-    padding: 16px 8px;
-    border-radius: 2.5%;
-    font-family: $mainFont;
-    font-size: 16px;
-    text-align: center;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 1.5vh 0.8vh;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5vh;
     outline: none;
-    border: none;
     color: #fff;
-    background-color: $secondaryColor;
-    &:focus-within {
-      background-color: $secondaryColorDark;
+    font-family: $mainFont;
+    font-size: 1.9vh;
+    font-weight: 600;
+    text-align: center;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+
+    &:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.35);
     }
   }
 
   .inventory-control-button {
-    font-size: 14px;
-    color: #fff;
-    background-color: $secondaryColor;
-    transition: 200ms;
-    padding: 12px 8px;
-    border-radius: 2.5%;
-    border: none;
-    text-transform: uppercase;
-    font-family: $mainFont;
+    box-sizing: border-box;
     width: 100%;
-    font-weight: 500;
+    height: 4.4vh;
+    padding: 1.5vh;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5vh;
+    color: #fff;
+    font-size: 1.5vh;
+    font-weight: 700;
+    letter-spacing: 0.1vh;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+
     &:hover {
-      background-color: $secondaryColorDark;
+      background: rgba(48, 49, 58, 0.98);
+      border-color: rgba(255, 255, 255, 0.25);
     }
   }
 }
 
+.useful-controls-button {
+  position: absolute;
+  bottom: 3vh;
+  right: 7.8%;
+  width: 5vh;
+  height: 5vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  fill: #fff;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.6vh;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  svg {
+    width: 2.6vh;
+    height: 2.6vh;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.useful-controls-dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
 .useful-controls-dialog {
-  background-color: $mainColor;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: $textColor;
   width: 450px;
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  border-radius: 4px;
   gap: 16px;
-}
-
-.useful-controls-dialog-overlay {
-  background-color: rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  background-color: rgba(16, 17, 22, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.6vh;
+  color: $textColor;
+  font-family: $mainFont;
 }
 
 .useful-controls-dialog-title {
@@ -207,6 +607,8 @@ body.inv-dragging {
   justify-content: space-between;
   align-items: center;
   font-size: 18px;
+  font-weight: 700;
+  color: #fff;
 }
 
 .useful-controls-dialog-close {
@@ -218,8 +620,9 @@ body.inv-dragging {
   align-items: center;
   border-radius: 4px;
   fill: $textColor;
+
   &:hover {
-    background-color: $secondaryColorHighlight;
+    background-color: rgba(255, 255, 255, 0.1);
     cursor: pointer;
   }
 }
@@ -228,190 +631,185 @@ body.inv-dragging {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
 
-.divider {
-  width: 100%;
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-.useful-controls-button {
-  position: absolute !important;
-  bottom: 25px;
-  right: 25px;
-  transition: 200ms !important;
-  border: none;
-  color: white;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  fill: white;
-  border-radius: 5% !important;
-  background-color: $secondaryColor !important;
-  &:hover {
-    background-color: $secondaryColorDark !important;
-    cursor: pointer;
+  kbd {
+    padding: 2px 6px;
+    background: #e9e9ec;
+    color: #15161a;
+    border-radius: 3px;
+    font-weight: 600;
   }
 }
 
-.useful-controls-exit-button {
-  position: absolute !important;
-  right: 8px;
-  top: 8px;
-  border-radius: 2.5% !important;
-  color: grey !important;
+// ---------------------------------------------------------------- item card
+
+.item-card {
+  z-index: 50;
+  display: flex;
+  align-items: stretch;
+  gap: 1.2vh;
+  font-family: $mainFont;
+  color: $textColor;
 }
 
-// Dialog is used fro useful controls window
-
-// inventory grids
-.inventory-grid-wrapper {
+.item-card-info {
+  box-sizing: border-box;
+  width: 23.7vh;
   display: flex;
   flex-direction: column;
-  gap: calc($gridGap * 2);
+  gap: 1.1vh;
+  padding: 1.5vh;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.6vh;
+  // backdrop-filter: blur(8px);
 }
-.inventory-grid-header-wrapper {
+
+.item-card-head {
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
-  p {
-    font-size: 16px;
+  align-items: center;
+  gap: 1vh;
+
+  h3 {
+    margin: 0;
+    font-size: 2.4vh;
+    font-weight: 800;
+    font-style: italic;
+    line-height: 1.15;
+    color: #fff;
   }
 }
 
-.inventory-grid-container {
+.item-card-collapse {
+  flex: none;
   display: grid;
-  height: $containerSize;
-  grid-template-columns: repeat($gridCols, $gridSize);
-  grid-auto-rows: $gridSize + 0.22vh;
-  gap: $gridGap;
-  overflow-y: scroll;
+  place-items: center;
+  width: 2.4vh;
+  height: 2.4vh;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  svg {
+    width: 1.1vh;
+    height: 1.1vh;
+    fill: #fff;
+  }
 }
 
-// inventory slots
-.inventory-slot {
-  background-color: $secondaryColor;
-  background-repeat: no-repeat;
-  background-position: center;
-  border-radius: 2.5%;
-  image-rendering: -webkit-optimize-contrast;
-  position: relative;
-  background-size: 7vh;
-  color: $textColor;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+.item-card-sub {
+  font-size: 1.5vh;
+  color: rgba(255, 255, 255, 0.55);
 }
 
-.inventory-slot-label-box {
-  background-color: $mainColor;
-  color: $textColor;
-  text-align: center;
-  border-bottom-left-radius: 0.25vh;
-  border-bottom-right-radius: 0.25vh;
-  border-top-color: rgba(0, 0, 0, 0.2);
-  border-top-style: inset;
-  border-top-width: 1px;
-}
-
-.inventory-slot-label-text {
-  text-transform: uppercase;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 2px 3px;
-  font-weight: 400;
-  font-family: $mainFont;
-  font-size: 12px;
-}
-
-.inventory-slot-number {
-  background-color: white;
-  color: black;
-  height: 12px;
-  border-top-left-radius: 0.25vh;
-  border-bottom-right-radius: 0.25vh;
-  padding: 3px;
-  font-size: 12px;
-  font-family: $mainFont;
-}
-
-.item-slot-wrapper {
+.item-card-block {
   display: flex;
   flex-direction: column;
+  gap: 0.8vh;
+}
+
+.item-card-label {
+  font-size: 1.6vh;
+  font-weight: 700;
+  color: #fff;
+}
+
+.item-card-row {
+  display: flex;
   justify-content: space-between;
-  height: 100%;
-  p {
-    font-size: 12px;
+  gap: 1vh;
+  font-size: 1.5vh;
+
+  span {
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  strong {
+    font-weight: 700;
+    color: #fff;
+    word-break: break-all;
+    text-align: right;
   }
 }
 
-.item-slot-header-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-}
+.item-card-description {
+  font-size: 1.5vh;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
 
-.item-hotslot-header-wrapper {
-  @extend .item-slot-header-wrapper;
-  justify-content: space-between !important;
-}
-
-.item-slot-info-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-self: flex-end;
-  padding: 3px;
-  gap: 3px;
   p {
-    font-size: 12px;
+    font-size: 1.5vh;
   }
 }
 
-.item-slot-currency-wrapper {
+.item-card-actions {
   display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 3px;
-  p {
-    font-size: 14px;
-    text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
+  flex-direction: column;
+  gap: 0.6vh;
+  min-width: 11vh;
+
+  button {
+    height: 4vh;
+    padding: 0 1.2vh;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5vh;
+    color: #fff;
+    font-size: 1.6vh;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: rgba(48, 49, 58, 0.98);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    &.sub {
+      height: 3.4vh;
+      font-size: 1.4vh;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+    }
   }
 }
 
-.item-slot-price-wrapper {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  padding-right: 3px;
-  p {
-    font-size: 14px;
-    text-shadow: 0.1vh 0.1vh 0 rgba(0, 0, 0, 0.7);
-  }
-}
+// ---------------------------------------------------------------- tooltip (hover, right inventory / shops)
 
 .tooltip-wrapper {
   pointer-events: none;
   display: flex;
-  background-color: $mainColor;
-  width: 200px;
-  padding: 8px;
   flex-direction: column;
+  width: 200px;
   min-width: 200px;
+  padding: 10px;
+  background-color: rgba(16, 17, 22, 0.96);
   color: $textColor;
   font-family: $mainFont;
-  border-radius: 4px;
-  border-color: rgba(0, 0, 0, 0.2);
-  border-style: inset;
-  border-width: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.6vh;
+
   p {
     font-size: 12px;
     font-weight: 400;
   }
+}
+
+.tooltip-description {
+  padding-top: 5px;
+}
+
+.tooltip-markdown > p {
+  margin: 0;
 }
 
 .tooltip-header-wrapper {
@@ -419,9 +817,11 @@ body.inv-dragging {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+
   p {
     font-size: 15px;
-    font-weight: 400;
+    font-weight: 600;
+    color: #fff;
   }
 }
 
@@ -430,9 +830,11 @@ body.inv-dragging {
   flex-direction: row;
   align-items: center;
   justify-content: center;
+
   svg {
     padding-right: 3px;
   }
+
   p {
     font-size: 14px;
   }
@@ -446,6 +848,7 @@ body.inv-dragging {
   display: flex;
   flex-direction: row;
   align-items: center;
+
   img {
     width: 28px;
     height: 28px;
@@ -453,11 +856,19 @@ body.inv-dragging {
   }
 }
 
-// hotbar
+.divider {
+  width: 100%;
+  height: 1px;
+  margin: 6px 0;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+// ---------------------------------------------------------------- in-game hotbar
+
 .hotbar-container {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 0.6vh;
   justify-content: center;
   width: 100%;
   position: absolute;
@@ -476,41 +887,44 @@ body.inv-dragging {
   justify-content: space-between;
 }
 
-// item notifications
-
-.item-notification-container {
+.item-slot-info-wrapper {
   display: flex;
-  overflow-x: scroll;
-  flex-wrap: nowrap;
-  gap: 2px;
-  position: absolute;
-  bottom: 20vh;
-  left: 50%;
-  width: 100%;
-  margin-left: calc(50% - calc($gridSize/2));
-  transform: translate(-50%);
-}
+  flex-direction: row;
+  align-self: flex-end;
+  padding: 3px;
+  gap: 3px;
 
-.item-notification-action-box {
-  width: 100%;
-  color: $textColor;
-  background-color: $secondaryColor;
-  text-transform: uppercase;
-  text-align: center;
-  border-top-left-radius: 0.25vh;
-  border-top-right-radius: 0.25vh;
-  font-family: $mainFont;
   p {
-    font-size: 11px;
-    padding: 2px;
-    font-weight: 600;
+    font-size: 12px;
   }
 }
 
-.item-notification-item-box {
-  @extend .inventory-slot;
-  height: $gridSize;
-  width: $gridSize;
+.inventory-slot-number {
+  background-color: rgba(255, 255, 255, 0.85);
+  color: #111;
+  height: 12px;
+  border-top-left-radius: 0.4vh;
+  border-bottom-right-radius: 0.4vh;
+  padding: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.inventory-slot-label-box {
+  background-color: rgba(16, 17, 22, 0.9);
+  color: $textColor;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.inventory-slot-label-text {
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 3px;
+  font-weight: 400;
+  font-size: 12px;
 }
 
 .durability-bar {
@@ -526,6 +940,43 @@ body.inv-dragging {
   border-radius: 5%;
   overflow: hidden;
 }
+
+// ---------------------------------------------------------------- item notifications
+
+.item-notification-container {
+  display: flex;
+  overflow-x: scroll;
+  flex-wrap: nowrap;
+  gap: 0.6vh;
+  position: absolute;
+  bottom: 20vh;
+  left: 50%;
+  width: 100%;
+  margin-left: calc(50% - calc(#{$gridSize} / 2));
+  transform: translate(-50%);
+}
+
+.item-notification-action-box {
+  width: 100%;
+  color: $textColor;
+  background-color: rgba(16, 17, 22, 0.9);
+  text-transform: uppercase;
+  text-align: center;
+
+  p {
+    font-size: 11px;
+    padding: 2px;
+    font-weight: 600;
+  }
+}
+
+.item-notification-item-box {
+  @extend .inventory-slot;
+  height: $gridSize;
+  width: $gridSize;
+}
+
+// ---------------------------------------------------------------- transitions
 
 .transition-fade-enter {
   opacity: 0;

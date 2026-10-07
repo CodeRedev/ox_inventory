@@ -1,11 +1,10 @@
 import React, { useCallback, useRef } from 'react';
 import { DragSource, Inventory, InventoryType, Slot, SlotWithItem } from '../../typings';
 import { useDrag, useDragDropManager, useDrop } from 'react-dnd';
-import { useAppDispatch } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
 import WeightBar from '../utils/WeightBar';
 import { onDrop } from '../../dnd/onDrop';
 import { onBuy } from '../../dnd/onBuy';
-import { Items } from '../../store/items';
 import { canCraftItem, canPurchaseItem, getItemUrl, isSlotWithItem } from '../../helpers';
 import { onUse } from '../../dnd/onUse';
 import { Locale } from '../../store/locale';
@@ -13,8 +12,9 @@ import { onCraft } from '../../dnd/onCraft';
 import useNuiEvent from '../../hooks/useNuiEvent';
 import { ItemsPayload } from '../../reducers/refreshSlots';
 import { closeTooltip, openTooltip } from '../../store/tooltip';
-import { openContextMenu } from '../../store/contextMenu';
+import { closeItemCard, openItemCard } from '../../store/itemCard';
 import { useMergeRefs } from '@floating-ui/react';
+import { formatWeight } from '../../utils/formatWeight';
 
 interface SlotProps {
   inventoryId: Inventory['id'];
@@ -30,6 +30,12 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
   const manager = useDragDropManager();
   const dispatch = useAppDispatch();
   const timerRef = useRef<number | null>(null);
+
+  const isPlayer = inventoryType === InventoryType.PLAYER;
+  const isHotkey = isPlayer && item.slot <= 5;
+  const selected = useAppSelector((state) => isPlayer && state.itemCard.open && state.itemCard.slot === item.slot);
+
+  const imageUrl = item?.name ? getItemUrl(item as SlotWithItem) : undefined;
 
   const canDrag = useCallback(() => {
     return canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) && canCraftItem(item, inventoryType);
@@ -49,7 +55,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                 name: item.name,
                 slot: item.slot,
               },
-              image: item?.name && `url(${getItemUrl(item) || 'none'}`,
+              image: imageUrl ? `url(${imageUrl})` : 'none',
             }
           : null,
       canDrag,
@@ -65,6 +71,7 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       }),
       drop: (source) => {
         dispatch(closeTooltip());
+        dispatch(closeItemCard());
         switch (source.inventory) {
           case InventoryType.SHOP:
             onBuy(source, { inventory: inventoryType, item: { slot: item.slot } });
@@ -103,11 +110,25 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
     drag(drop(element));
   };
 
+  const toggleCard = (element: HTMLDivElement) => {
+    if (selected) return dispatch(closeItemCard());
+
+    const rect = element.getBoundingClientRect();
+    dispatch(
+      openItemCard({
+        slot: item.slot,
+        anchor: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      })
+    );
+  };
+
+  // Right click opens the same card as left click.
   const handleContext = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (inventoryType !== 'player' || !isSlotWithItem(item)) return;
+    if (!isPlayer || !isSlotWithItem(item)) return;
 
-    dispatch(openContextMenu({ item, coords: { x: event.clientX, y: event.clientY } }));
+    dispatch(closeTooltip());
+    toggleCard(event.currentTarget);
   };
 
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -115,8 +136,10 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
     if (timerRef.current) clearTimeout(timerRef.current);
     if (event.ctrlKey && isSlotWithItem(item) && inventoryType !== 'shop' && inventoryType !== 'crafting') {
       onDrop({ item: item, inventory: inventoryType });
-    } else if (event.altKey && isSlotWithItem(item) && inventoryType === 'player') {
+    } else if (event.altKey && isSlotWithItem(item) && isPlayer) {
       onUse(item);
+    } else if (isPlayer && isSlotWithItem(item)) {
+      toggleCard(event.currentTarget);
     }
   };
 
@@ -127,21 +150,25 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
       ref={refs}
       onContextMenu={handleContext}
       onClick={handleClick}
-      className="inventory-slot"
+      className={`inventory-slot${selected ? ' is-selected' : ''}`}
       style={{
         filter:
           !canPurchaseItem(item, { type: inventoryType, groups: inventoryGroups }) || !canCraftItem(item, inventoryType)
             ? 'brightness(80%) grayscale(100%)'
             : undefined,
         opacity: isDragging ? 0.4 : 1.0,
-        backgroundImage: `url(${item?.name ? getItemUrl(item as SlotWithItem) : 'none'}`,
-        border: isOver ? '1px dashed rgba(255,255,255,0.4)' : '',
+        backgroundImage: imageUrl ? `url(${imageUrl})` : 'none',
+        outline: isOver ? '1px dashed rgba(255,255,255,0.5)' : undefined,
+        outlineOffset: '-1px',
       }}
     >
+      {isHotkey && <div className="slot-hotkey">{item.slot}</div>}
       {isSlotWithItem(item) && (
         <div
           className="item-slot-wrapper"
           onMouseEnter={() => {
+            // The player's own items use the click card instead of the hover tooltip.
+            if (isPlayer) return;
             timerRef.current = window.setTimeout(() => {
               dispatch(openTooltip({ item, inventoryType }));
             }, 500) as unknown as number;
@@ -154,31 +181,11 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
             }
           }}
         >
-          <div
-            className={
-              inventoryType === 'player' && item.slot <= 5 ? 'item-hotslot-header-wrapper' : 'item-slot-header-wrapper'
-            }
-          >
-            {inventoryType === 'player' && item.slot <= 5 && <div className="inventory-slot-number">{item.slot}</div>}
-            <div className="item-slot-info-wrapper">
-              <p>
-                {item.weight > 0
-                  ? item.weight >= 1000
-                    ? `${(item.weight / 1000).toLocaleString('en-us', {
-                        minimumFractionDigits: 2,
-                      })}kg `
-                    : `${item.weight.toLocaleString('en-us', {
-                        minimumFractionDigits: 0,
-                      })}g `
-                  : ''}
-              </p>
-              <p>{item.count ? item.count.toLocaleString('en-us') + `x` : ''}</p>
-            </div>
+          <div className="item-slot-header-wrapper">
+            {item.count ? <span className="slot-count">x{item.count.toLocaleString('en-us')}</span> : null}
           </div>
-          <div>
-            {inventoryType !== 'shop' && item?.durability !== undefined && (
-              <WeightBar percent={item.durability} durability />
-            )}
+          <div className="slot-footer">
+            <span className="slot-weight">{item.weight > 0 ? formatWeight(item.weight) : ''}</span>
             {inventoryType === 'shop' && item?.price !== undefined && (
               <>
                 {item?.currency !== 'money' && item.currency !== 'black_money' && item.price > 0 && item.currency ? (
@@ -213,12 +220,12 @@ const InventorySlot: React.ForwardRefRenderFunction<HTMLDivElement, SlotProps> =
                 )}
               </>
             )}
-            <div className="inventory-slot-label-box">
-              <div className="inventory-slot-label-text">
-                {item.metadata?.label ? item.metadata.label : Items[item.name]?.label || item.name}
-              </div>
-            </div>
           </div>
+          {inventoryType !== 'shop' && item?.durability !== undefined && (
+            <div className="slot-durability">
+              <WeightBar percent={item.durability} durability />
+            </div>
+          )}
         </div>
       )}
     </div>

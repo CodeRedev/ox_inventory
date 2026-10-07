@@ -20,7 +20,14 @@ const COLORS = {
   accentColor: [211, 84, 0], // Orange (Oragne)
 };
 
-const WeightBar: React.FC<{ percent: number; durability?: boolean }> = ({ percent, durability }) => {
+interface Props {
+  percent: number;
+  durability?: boolean;
+  // When set, renders a bar split into this many white segments (QB style) instead of a continuous colored bar.
+  segments?: number;
+}
+
+const WeightBar: React.FC<Props> = ({ percent, durability, segments }) => {
   const color = useMemo(
     () =>
       durability
@@ -32,6 +39,18 @@ const WeightBar: React.FC<{ percent: number; durability?: boolean }> = ({ percen
           : colorMixer(COLORS.accentColor, COLORS.secondColor, percent / 50),
     [durability, percent]
   );
+
+  if (segments) {
+    const filled = percent > 0 ? Math.min(segments, Math.ceil((percent / 100) * segments)) : 0;
+
+    return (
+      <div className="segment-bar">
+        {Array.from({ length: segments }, (_, index) => (
+          <div key={index} className={index < filled ? 'filled' : undefined} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={durability ? 'durability-bar' : 'weight-bar'}>
